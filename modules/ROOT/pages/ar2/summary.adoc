@@ -1,0 +1,41 @@
+= Summary of technical changes in agrirouter 2.0
+
+Here is the summary of all technical changes made in agrirouter 2.0
+
+* The featue of pairing tenants was removed. 
+
+* Isobus messages are not used for creating machine endpoints anymore. They create no machines within agrirouter, but for the endpoints still possible. Messages are EFDI messages.
+
+* Reonboarding VCUs is now supported. This also enables Telemetry Platforms to rename their VCUs. Conflicts between manual user renaming and TPs renaming the VCUs are resolved with “last update wins”.
+
+* External IDs' uniqueness is scoped to tenant+application. Potential previous issues caused by namespace collision are prevented.
+
+* Switching GatewayID MQTT<->HTTP is now allowed. Data loss could happen during switch from MQTT to HTTP and vice-versa, however it is not a problem that can or should be solved at Agrirouter backend level, but rather at application level. App developers now responsible for making sure switch does not happen, data loss is not critical or buffers are drained before/during the switch. It may only be used for migration from one gateway to the other, please contact us before trying it.
+
+* Codes VAL_000004 and VAL_000005 receive following generified logic:
+When message is directed (or directed and published) and routing failed to some or all directly-specified
+recipients:
+VAL_000004 is used when message was not routed to any of directly-specified recipients (due to not existing recipients, or missing capabilities, or missing routes, etc)
+VAL_000005 is used when message was routed at least to one of directly-specified recipients, but some requested deliveries did fail When message is only published: At least gps:info was developed by another team and might have differences in implementation. Generally idea is that difference between 04 and 05 signifies whether result is complete failure ( 4 - ACK_WITH_FAILURE) or partial failure ( 5 - ACK_WITH_MESSAGES). However, this is only applicable for when sender directs to specific recipients, that we can identify as not reachable and sender was supposed to as well (using command that get endpoints filtered with routes). If sender publishes, it does not know of subscriptions (as is normal for PUB/SUB pattern) and hence returning error in case of any undelivery does not quite make sense, as sender has no power to Current regression test for unusual
+gps:info behavior. ready ACK without any errors would be responded regardless of routing In legacy system, one tested case when endpoint sends DIRECT gps:info message to another endpoint that it does not have route to, result is currently VAL_000005 , however it would be changed to VAL_000004 as all recipients to which message was directed could not receive it.
+
+* Multiple redirect URLs can now be set. The first redirect URL set comes into play when an authorize request does not provide a redirect URL (or an invalid one)  an authorize request’s redirect_uri should always be set.
+ 
+* When trying to onboard a vCU onto something other than a telemetry platform, the onboarding response is not a dedicated message "The application is not a cloud application." but rather a VAL_000303 "Not allowed to send message type %technicalMessageType%". It is easier to not provide a dedicated error message here and this more generic VAL_000303 should get the point across as the onboarding response.
+
+* Revoking an endpoint: Response doesn’t contain key/name fields, but an http status code and
+empty body. Reonboarding a revoked endpoint doesn’t throw an OnboardingError, but is accepted since revoked endpoint is deleted. Status code indicates the result. No impact on system since revoking endpoint deletes the endpoint onboarding revoked endpoint will create a new one.
+
+* Route handling has changed: there are no more default group instead, “managed routes” will be created/deleted on endpoint creation, capability setting/update, endpoint deletion endpoints can be opted out of having routes managed on their behalf this opt-out will be automatically set if a route is changed (added/delete) manually this might lead to invalid routes, if an endpoint removes capabilities after manually setting a route; these routes will be shown as such additionally, opting out of managed routes will also be possible on the tenant level.  Routings are not made based on informationType (= groups of Technical Message Types), but based on TechnicalMessageTypes. DDI filtering is not supported anymore; it's all Telemetry or none.
+
+* MarketPlace was replaced with xref:modules\ROOT\pages\partner-process\solutionfinder.adoc[SolutionFinder].
+
+* DKE:Ping was added to check if an endpoint is still connected and existing in agrirouter.
+
+* The feature of machines within agrirouter was removed.
+
+* The export of Metrics was removed.
+
+* Router devices can now have names.
+
+* CU Tan is now valid for any CU; no choice required anymore.
